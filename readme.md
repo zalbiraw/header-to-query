@@ -11,7 +11,7 @@ experimental:
   plugins:
     headertoquery:
       moduleName: github.com/zalbiraw/headertoquery
-      version: v0.0.1
+      version: v0.0.3
 ```
 
 ## Dynamic Configuration Example
