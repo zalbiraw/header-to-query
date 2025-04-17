@@ -76,10 +76,7 @@ func (p *HeaderToQuery) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	r.URL.RawQuery = q.Encode()
 	r.RequestURI = r.URL.RequestURI()
 
-	clone := r.Clone(r.Context())
-	clone.Body = r.Body
-
-	p.next.ServeHTTP(rw, clone)
+	p.next.ServeHTTP(rw, r)
 }
 
 // normalizeKey converts header names to a suitable query key (lowercase, dashes to underscores, etc.)
