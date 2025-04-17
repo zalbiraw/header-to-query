@@ -2,14 +2,14 @@ displayName: Header To Query
 type: middleware
 iconPath: .assets/icon.png
 
-import: github.com/zalbiraw/header-to-query
+import: github.com/zalbiraw/headertoquery
 
 summary: 'Converts HTML headers to URL query parameters'
 
 testData:
   Headers:
     - name: SERVICE-TAG
-      value: id
+      key: id
     - name: RANK
     - name: GROUP
       keepHeader: true

@@ -1,4 +1,4 @@
-package header_to_query_test
+package headertoquery_test
 
 import (
 	"context"
@@ -6,17 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/zalbiraw/header-to-query"
+	"github.com/zalbiraw/headertoquery"
 )
 
 func TestHeaderToQuery(t *testing.T) {
-	cfg := HeaderToQuery.CreateConfig()
-	
+	cfg := headertoquery.CreateConfig()
+
 	// Configure headers based on test data
-	cfg.Headers = []HeaderToQuery.Header{
+	cfg.Headers = []headertoquery.Header{
 		{
-			Name:  "SERVICE-TAG",
-			Value: "id",
+			Name: "SERVICE-TAG",
+			Key:  "id",
 		},
 		{
 			Name: "RANK",
@@ -30,29 +30,29 @@ func TestHeaderToQuery(t *testing.T) {
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
 
-	handler, err := HeaderToQuery.New(ctx, next, cfg, "header-to-query-plugin")
+	handler, err := headertoquery.New(ctx, next, cfg, "header-to-query-plugin")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	recorder := httptest.NewRecorder()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/get?test=test", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Set test headers
-	req.Header.Set("SERVICE_TAG", "S117")
-	req.Header.Set("SERVICE_TAG", "SPARTAN-117")
-	req.Header.Set("SERVICE_TAG", "117")
-	req.Header.Set("RANK", "Masterchief")
-	req.Header.Set("GROUP", "UNSC")
+	req.Header.Add("SERVICE-TAG", "S117")
+	req.Header.Add("SERVICE-TAG", "SPARTAN-117")
+	req.Header.Add("SERVICE-TAG", "117")
+	req.Header.Add("RANK", "Masterchief")
+	req.Header.Add("GROUP", "UNSC")
 
 	handler.ServeHTTP(recorder, req)
 
 	// Assert headers
-	assertHeaderNotExists(t, req, "SERVICE_TAG")
+	assertHeaderNotExists(t, req, "SERVICE-TAG")
 	assertHeaderNotExists(t, req, "RANK")
 	assertHeaderEquals(t, req, "GROUP", "UNSC")
 
@@ -60,6 +60,7 @@ func TestHeaderToQuery(t *testing.T) {
 	assertQueryParamEquals(t, req, "id", "S117", "SPARTAN-117", "117")
 	assertQueryParamEquals(t, req, "rank", "Masterchief")
 	assertQueryParamEquals(t, req, "group", "UNSC")
+	assertQueryParamEquals(t, req, "test", "test")
 }
 
 // assertHeaderNotExists checks that a header does not exist

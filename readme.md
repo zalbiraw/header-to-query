@@ -8,9 +8,10 @@ Add the plugin to your Traefik static configuration:
 
 ```yaml
 experimental:
-  localPlugins:
-    header-to-query:
-      moduleName: github.com/zalbiraw/header-to-query
+  plugins:
+    headertoquery:
+      moduleName: github.com/zalbiraw/headertoquery
+      version: v0.0.1
 ```
 
 ## Dynamic Configuration Example
@@ -24,14 +25,14 @@ http:
       entryPoints:
         - web
       middlewares:
-        - my-header-to-query
+        - headertoquery
 
   middlewares:
-    my-header-to-query:
+    headertoquery:
       plugin:
         headers:
           - name: SERVICE_TAG
-            value: id
+            key: id
           - name: RANK
           - name: GROUP
             keepHeader: true
@@ -41,7 +42,7 @@ http:
 
 - Each `headers` entry can specify:
   - `name`: The HTTP header to process
-  - `value`: (Optional) The query parameter name to use (defaults to the header name)
+  - `key`: (Optional) The query parameter name to use (defaults to the header name)
   - `keepHeader`: (Optional) If `true`, the header is not removed from the request
 - If a header appears multiple times, all values are mapped as repeated query parameters (e.g., `?id=1&id=2`).
 
@@ -52,7 +53,7 @@ Given this configuration:
 ```yaml
 headers:
   - name: SERVICE_TAG
-    value: id
+    key: id
   - name: RANK
   - name: GROUP
     keepHeader: true

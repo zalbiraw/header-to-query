@@ -1,9 +1,9 @@
-// Package header-to-query a plugin to convert headers to query parameters.
-package header_to_query
+// Package headertoquery a plugin to convert headers to query parameters.
+package headertoquery
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -12,7 +12,7 @@ import (
 // for converting headers to query parameters.
 type Header struct {
 	Name       string `json:"name" yaml:"name"`
-	Value      string `json:"value,omitempty" yaml:"value,omitempty"`
+	Key        string `json:"key,omitempty" yaml:"key,omitempty"`
 	KeepHeader bool   `json:"keepHeader,omitempty" yaml:"keepHeader,omitempty"`
 }
 
@@ -30,52 +30,56 @@ func CreateConfig() *Config {
 
 // HeaderToQuery a plugin to convert headers to query parameters.
 type HeaderToQuery struct {
-	next     http.Handler
-	headers  []Header
-	name     string
+	next    http.Handler
+	headers []Header
+	name    string
 }
 
 // New created a new HeaderToQuery plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.Headers) == 0 {
-		return nil, fmt.Errorf("headers cannot be empty")
+		return nil, errors.New("headers cannot be empty")
 	}
 
 	return &HeaderToQuery{
-		headers:  config.Headers,
-		next:     next,
-		name:     name,
+		headers: config.Headers,
+		next:    next,
+		name:    name,
 	}, nil
 }
 
-func (p *HeaderToQuery) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	q := req.URL.Query()
+func (p *HeaderToQuery) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
 	for _, h := range p.headers {
-		values := req.Header.Values(h.Name)
+		values := r.Header.Values(h.Name)
+
 		if len(values) == 0 {
 			continue
 		}
-		// If Value is set, use as query param name, else use header name (lowercased)
-		queryKey := h.Value
-		if queryKey == "" {
-			queryKey = h.Name
+
+		// Remove all headers if keepHeader is false
+		if !h.KeepHeader {
+			r.Header.Del(h.Name)
 		}
 
-		// Normalize query key after queryKey is set to avoid issues with misuse and invalid characters
+		// If Key is set, use as query param name, else use header name (lowercased)
+		queryKey := h.Name
+		if h.Key != "" {
+			queryKey = h.Key
+		}
 		queryKey = normalizeKey(queryKey)
+
 		for _, v := range values {
 			q.Add(queryKey, v)
 		}
-
-		// Remove header if not kept
-		if !h.KeepHeader {
-			req.Header.Del(h.Name)
-		}
 	}
-	// Set all query params at once
-	req.URL.RawQuery = q.Encode()
+	r.URL.RawQuery = q.Encode()
+	r.RequestURI = r.URL.RequestURI()
 
-	p.next.ServeHTTP(rw, req)
+	clone := r.Clone(r.Context())
+	clone.Body = r.Body
+
+	p.next.ServeHTTP(rw, clone)
 }
 
 // normalizeKey converts header names to a suitable query key (lowercase, dashes to underscores, etc.)

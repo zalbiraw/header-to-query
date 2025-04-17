@@ -1,3 +1,3 @@
-module github.com/zalbiraw/header-to-query
+module github.com/zalbiraw/headertoquery
 
 go 1.19
